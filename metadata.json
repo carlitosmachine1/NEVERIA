@@ -1,0 +1,5 @@
+{
+  "name": "GelatoPOS",
+  "description": "Punto de venta táctil y offline para heladerías con impresión de tickets y asistente IA.",
+  "requestFramePermissions": []
+}
