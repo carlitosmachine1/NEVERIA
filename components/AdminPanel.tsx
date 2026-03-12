@@ -339,16 +339,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                     <div className="bg-white p-6 rounded-xl border shadow-sm">
                        <h3 className="font-bold text-lg mb-4 text-gray-800">Ventas Recientes (Por Día)</h3>
                        <div className="space-y-2">
-                          {Object.entries(reports.dailySales).slice(-7).map(([date, total]) => (
+                          {(Object.entries(reports.dailySales) as [string, number][]).slice(-7).map(([date, total]) => (
                             <div key={date} className="flex items-center gap-2">
                                <div className="w-24 text-sm font-mono text-gray-500">{date}</div>
                                <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
                                   <div 
                                     className="h-full bg-green-500" 
-                                    style={{ width: `${Math.min(100, (total / (Math.max(...Object.values(reports.dailySales)) || 1)) * 100)}%` }}
+                                    style={{ width: `${Math.min(100, (total / (Math.max(...(Object.values(reports.dailySales) as number[])) || 1)) * 100)}%` }}
                                   ></div>
                                </div>
-                               <div className="w-20 text-right font-bold text-sm">${total.toFixed(0)}</div>
+                               <div className="w-20 text-right font-bold text-sm">${(total as number).toFixed(0)}</div>
                             </div>
                           ))}
                           {Object.keys(reports.dailySales).length === 0 && <p className="text-gray-500 italic">No hay datos aún.</p>}

@@ -6,7 +6,7 @@ const StoreContext = createContext<StoreState | undefined>(undefined);
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [businessName, setBusinessName] = useState(() => {
-    return localStorage.getItem('pos_business_name') || "La Colonial";
+    return localStorage.getItem('pos_business_name') || "ALONSO INC";
   });
 
   const [receiptLogo, setReceiptLogo] = useState<string | null>(() => {
