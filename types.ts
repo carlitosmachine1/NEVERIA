@@ -29,12 +29,12 @@ export interface Order {
   paymentMethod: 'EFECTIVO' | 'TARJETA';
   receivedAmount?: number;
   change?: number;
-  aiMessage?: string;
 }
 
 export interface StoreState {
   businessName: string;
   address: string;
+  phone: string;
   adminPin: string;
   cajeroPin: string;
   receiptLogo: string | null; // Base64 string for the image
@@ -49,6 +49,7 @@ export interface StoreState {
   deleteCategory: (id: string) => void;
   updateBusinessName: (name: string) => void;
   updateAddress: (address: string) => void;
+  updatePhone: (phone: string) => void;
   updateAdminPin: (pin: string) => void;
   updateCajeroPin: (pin: string) => void;
   updateReceiptLogo: (base64: string | null) => void;

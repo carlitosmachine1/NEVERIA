@@ -7,7 +7,7 @@ interface ReceiptProps {
 }
 
 const Receipt: React.FC<ReceiptProps> = ({ order }) => {
-  const { businessName, receiptLogo, address } = useStore();
+  const { businessName, receiptLogo, address, phone } = useStore();
   
   if (!order) return null;
 
@@ -23,7 +23,7 @@ const Receipt: React.FC<ReceiptProps> = ({ order }) => {
         ) : null}
         <h1 className="text-xl font-bold uppercase mb-1">{businessName}</h1>
         <p>{address}</p>
-        <p>Tel: 555-0000</p>
+        <p>Tel: {phone}</p>
         <p className="mt-2">{order.date.toLocaleDateString()} {order.date.toLocaleTimeString()}</p>
         <p>Ticket: #{order.id.slice(0, 8)}</p>
       </div>
@@ -71,11 +71,7 @@ const Receipt: React.FC<ReceiptProps> = ({ order }) => {
       <div className="border-b-2 border-dashed border-black my-4"></div>
 
       <div className="text-center">
-        {order.aiMessage && (
-            <p className="italic font-bold mb-2">"{order.aiMessage}"</p>
-        )}
         <p className="font-semibold">¡Vuelva Pronto!</p>
-        <p className="text-[10px] mt-2 text-gray-500">Desarrollado con Gemini AI</p>
       </div>
     </div>
   );

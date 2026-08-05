@@ -1,6 +1,6 @@
 {
-  "name": "ALONSO INC POS",
-  "short_name": "Alonso POS",
+  "name": "HelaPOS",
+  "short_name": "HelaPOS",
   "description": "Punto de Venta",
   "start_url": "/",
   "display": "standalone",

@@ -7,14 +7,18 @@ const StoreContext = createContext<StoreState | undefined>(undefined);
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [businessName, setBusinessName] = useState(() => {
     const saved = localStorage.getItem('pos_business_name');
-    if (!saved || saved === "La Colonial" || saved === "Alonso Gringo") {
-      return "ALONSO INC";
+    if (!saved || saved === "La Colonial" || saved === "Alonso Gringo" || saved === "ALONSO INC") {
+      return "HelaPOS";
     }
     return saved;
   });
 
   const [address, setAddress] = useState(() => {
     return localStorage.getItem('pos_address') || "Av. Principal #123, Centro";
+  });
+
+  const [phone, setPhone] = useState(() => {
+    return localStorage.getItem('pos_phone') || "555-0000";
   });
 
   const [adminPin, setAdminPin] = useState(() => {
@@ -65,6 +69,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem('pos_address', address);
   }, [address]);
+
+  useEffect(() => {
+    localStorage.setItem('pos_phone', phone);
+  }, [phone]);
 
   useEffect(() => {
     localStorage.setItem('pos_admin_pin', adminPin);
@@ -126,6 +134,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setAddress(newAddress);
   };
 
+  const updatePhone = (newPhone: string) => {
+    setPhone(newPhone);
+  };
+
   const updateAdminPin = (pin: string) => {
     setAdminPin(pin);
   };
@@ -146,6 +158,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <StoreContext.Provider value={{
       businessName,
       address,
+      phone,
       adminPin,
       cajeroPin,
       receiptLogo,
@@ -160,6 +173,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       deleteCategory,
       updateBusinessName,
       updateAddress,
+      updatePhone,
       updateAdminPin,
       updateCajeroPin,
       updateReceiptLogo,

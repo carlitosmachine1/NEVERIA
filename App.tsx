@@ -6,7 +6,6 @@ import PaymentModal from './components/PaymentModal';
 import Receipt from './components/Receipt';
 import AdminPanel from './components/AdminPanel';
 import LoginScreen from './components/LoginScreen';
-import { generateReceiptMessage } from './services/geminiService';
 import { useStore } from './context/StoreContext';
 
 // Helper to map icon types to components
@@ -112,9 +111,6 @@ const App: React.FC = () => {
 
   const handlePayment = async (method: 'EFECTIVO' | 'TARJETA', receivedAmount: number) => {
     setIsProcessing(true);
-    
-    // Generate AI message for receipt
-    const aiMessage = await generateReceiptMessage(cart);
 
     const order: Order = {
       id: Date.now().toString(),
@@ -125,11 +121,10 @@ const App: React.FC = () => {
       date: new Date(),
       paymentMethod: method,
       receivedAmount,
-      change: method === 'EFECTIVO' ? receivedAmount - cartTotal : 0,
-      aiMessage
+      change: method === 'EFECTIVO' ? receivedAmount - cartTotal : 0
     };
 
-    addOrder(order); 
+    addOrder(order);
     setCart([]);
     setIsPaymentModalOpen(false);
     setLastOrder(order);

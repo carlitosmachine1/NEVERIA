@@ -49,11 +49,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
     orders,
     businessName, 
     address,
+    phone,
     adminPin,
     cajeroPin,
     receiptLogo,
     updateBusinessName, 
     updateAddress,
+    updatePhone,
     updateAdminPin,
     updateCajeroPin,
     updateReceiptLogo,
@@ -72,6 +74,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
   
   const [nameInput, setNameInput] = useState(businessName);
   const [addressInput, setAddressInput] = useState(address);
+  const [phoneInput, setPhoneInput] = useState(phone);
   const [adminPinInput, setAdminPinInput] = useState(adminPin);
   const [cajeroPinInput, setCajeroPinInput] = useState(cajeroPin);
   const [showSaveBadge, setShowSaveBadge] = useState(false);
@@ -79,15 +82,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
   useEffect(() => {
     setNameInput(businessName);
     setAddressInput(address);
-    setAdminPinInput(adminPin);
-    setCajeroPinInput(cajeroPin);
-  }, [businessName, address, adminPin, cajeroPin]);
+    setPhoneInput(phone);
+    adminPin ? setAdminPinInput(adminPin) : setAdminPinInput('');
+    cajeroPin ? setCajeroPinInput(cajeroPin) : setCajeroPinInput('');
+  }, [businessName, address, phone, adminPin, cajeroPin]);
 
   const handleSaveSettings = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!nameInput.trim()) return;
     updateBusinessName(nameInput.trim());
     updateAddress(addressInput.trim());
+    updatePhone(phoneInput.trim());
     updateAdminPin(adminPinInput.trim() || '1234');
     updateCajeroPin(cajeroPinInput.trim() || '0000');
     
@@ -491,6 +496,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                         />
                       </div>
                       <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                        <input 
+                          type="text" 
+                          value={phoneInput}
+                          onChange={(e) => setPhoneInput(e.target.value)}
+                          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-pink-500 outline-none font-bold bg-gray-50 focus:bg-white transition-all"
+                          placeholder="Ej. 555-0000"
+                        />
+                      </div>
+                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">PIN de Administrador (4 dígitos)</label>
                         <input 
                           type="password" 
@@ -537,6 +552,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                       <div className="bg-white p-3 border rounded shadow-xs text-center font-mono">
                         <div className="font-bold text-base uppercase text-gray-900">{nameInput || businessName}</div>
                         <div className="text-[11px] text-gray-500">{addressInput || address}</div>
+                        <div className="text-[11px] text-gray-500">Tel: {phoneInput || phone}</div>
                       </div>
                     </div>
                   </form>
