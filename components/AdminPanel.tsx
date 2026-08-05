@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { X, Save, Check, Plus, Trash2, Edit2, Store, Package, Layers, BarChart3, Upload, Image as ImageIcon, LucideIceCream, LucidePopsicle, LucideCoffee, LucideCakeSlice, LucideCherry, LucideStar } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
-import { Product, Category } from '../types';
+import { Product, Category, ReportData } from '../types';
 
 interface AdminPanelProps {
   onClose: () => void;
+  onPrintReport?: (report: ReportData, filter: string, timeframe: string) => void;
 }
 
 const COLOR_PRESETS = [
@@ -42,7 +43,7 @@ const getCategoryIcon = (iconType: string) => {
   }
 };
 
-const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
+const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, onPrintReport }) => {
   const { 
     products, 
     categories, 
@@ -69,6 +70,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
 
   const [activeTab, setActiveTab] = useState<'PRODUCTS' | 'CATEGORIES' | 'SETTINGS' | 'REPORTS'>('PRODUCTS');
   const [reportTimeframe, setReportTimeframe] = useState<'DAY' | 'WEEK' | 'MONTH'>('DAY');
+  const [reportPaymentFilter, setReportPaymentFilter] = useState<'ALL' | 'EFECTIVO' | 'TARJETA'>('ALL');
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
   
@@ -149,15 +151,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
 
   // --- REPORT CALCULATIONS ---
   const reports = useMemo(() => {
-    const totalSales = orders.reduce((acc, order) => acc + order.total, 0);
-    const totalOrders = orders.length;
+    const filteredOrders = orders.filter(order => reportPaymentFilter === 'ALL' || order.paymentMethod === reportPaymentFilter);
+    const totalSales = filteredOrders.reduce((acc, order) => acc + order.total, 0);
+    const totalOrders = filteredOrders.length;
 
     // Sales by Product
     const productSales: Record<string, {name: string, qty: number, total: number}> = {};
-    orders.forEach(order => {
+    filteredOrders.forEach(order => {
       order.items.forEach(item => {
         if (!productSales[item.id]) {
-          productSales[item.id] = { name: item.name, qty: 0, total: 0 };
+           productSales[item.id] = { name: item.name, qty: 0, total: 0 };
         }
         productSales[item.id].qty += item.quantity;
         productSales[item.id].total += item.price * item.quantity;
@@ -170,7 +173,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
     const weeklySales: Record<string, number> = {};
     const monthlySales: Record<string, number> = {};
 
-    orders.forEach(order => {
+    filteredOrders.forEach(order => {
       const d = order.date;
       
       // Daily
@@ -191,7 +194,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
     });
 
     return { totalSales, totalOrders, sortedProducts, dailySales, weeklySales, monthlySales };
-  }, [orders]);
+  }, [orders, reportPaymentFilter]);
 
   return (
     <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -360,6 +363,26 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
             {/* REPORTS TAB */}
             {activeTab === 'REPORTS' && (
               <div className="space-y-6">
+                 {/* Filters and Print */}
+                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
+                   <div className="flex items-center gap-2">
+                     <span className="text-sm font-bold text-gray-600">Filtro de Pago:</span>
+                     <div className="flex bg-gray-100 p-1 rounded-lg">
+                       <button onClick={() => setReportPaymentFilter('ALL')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${reportPaymentFilter === 'ALL' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:bg-gray-200'}`}>Todos</button>
+                       <button onClick={() => setReportPaymentFilter('EFECTIVO')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${reportPaymentFilter === 'EFECTIVO' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:bg-gray-200'}`}>Efectivo</button>
+                       <button onClick={() => setReportPaymentFilter('TARJETA')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${reportPaymentFilter === 'TARJETA' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:bg-gray-200'}`}>Tarjeta</button>
+                     </div>
+                   </div>
+                   {onPrintReport && (
+                     <button
+                       onClick={() => onPrintReport(reports, reportPaymentFilter, reportTimeframe)}
+                       className="bg-gray-800 hover:bg-gray-900 active:scale-95 text-white px-6 py-2 rounded-lg font-bold transition-all shadow-sm flex items-center gap-2 w-full sm:w-auto justify-center"
+                     >
+                       Imprimir Reporte (Ticket)
+                     </button>
+                   )}
+                 </div>
+
                  <div className="grid grid-cols-2 gap-4">
                     <div className="bg-white p-6 rounded-xl border shadow-sm">
                        <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Ventas Totales</h4>

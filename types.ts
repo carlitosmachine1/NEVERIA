@@ -31,6 +31,15 @@ export interface Order {
   change?: number;
 }
 
+export interface ReportData {
+  totalSales: number;
+  totalOrders: number;
+  sortedProducts: { name: string; qty: number; total: number }[];
+  dailySales: Record<string, number>;
+  weeklySales: Record<string, number>;
+  monthlySales: Record<string, number>;
+}
+
 export interface StoreState {
   businessName: string;
   address: string;

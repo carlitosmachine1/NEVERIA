@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { ShoppingCart, Trash2, Plus, Minus, Printer, Settings, LucideIceCream, LucidePopsicle, LucideCoffee, LucideCakeSlice, LucideCherry, LucideStar, LogOut } from 'lucide-react';
+import { ShoppingCart, Trash2, Plus, Minus, Printer, Settings, LucideIceCream, LucidePopsicle, LucideCoffee, LucideCakeSlice, LucideCherry, LucideStar, LogOut, Maximize, Minimize } from 'lucide-react';
 import { TAX_RATE } from './constants';
-import { Product, CartItem, Order } from './types';
+import { Product, CartItem, Order, ReportData } from './types';
 import PaymentModal from './components/PaymentModal';
 import Receipt from './components/Receipt';
+import ReportReceipt from './components/ReportReceipt';
 import AdminPanel from './components/AdminPanel';
 import LoginScreen from './components/LoginScreen';
 import { useStore } from './context/StoreContext';
@@ -33,6 +34,22 @@ const App: React.FC = () => {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  
+  const [printType, setPrintType] = useState<'RECEIPT' | 'REPORT'>('RECEIPT');
+  const [reportToPrint, setReportToPrint] = useState<{data: ReportData, filter: string, timeframe: string} | null>(null);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.log(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
 
   // Inactivity Lock Logic
   useEffect(() => {
@@ -61,12 +78,21 @@ const App: React.FC = () => {
   // Trigger print automatically when lastOrder updates
   useEffect(() => {
     if (lastOrder) {
+      setPrintType('RECEIPT');
       const timer = setTimeout(() => {
         window.print();
       }, 500);
       return () => clearTimeout(timer);
     }
   }, [lastOrder]);
+  
+  const handlePrintReport = (report: ReportData, filter: string, timeframe: string) => {
+    setReportToPrint({ data: report, filter, timeframe });
+    setPrintType('REPORT');
+    setTimeout(() => {
+      window.print();
+    }, 500);
+  };
 
   // Update current category if it doesn't exist anymore
   useMemo(() => {
@@ -132,7 +158,12 @@ const App: React.FC = () => {
   };
 
   const handleReprint = () => {
-    if (lastOrder) window.print();
+    if (lastOrder) {
+      setPrintType('RECEIPT');
+      setTimeout(() => {
+        window.print();
+      }, 100);
+    }
   };
 
   // --- SECURITY LAYER ---
@@ -164,7 +195,15 @@ const App: React.FC = () => {
     <div className="flex h-screen w-full bg-gray-100 overflow-hidden font-sans relative">
       
       {/* Hidden Receipt Component - rendered at root level for printing */}
-      <Receipt order={lastOrder} />
+      {printType === 'RECEIPT' ? (
+        <Receipt order={lastOrder} />
+      ) : (
+        <ReportReceipt 
+          report={reportToPrint?.data || null} 
+          filter={reportToPrint?.filter || 'ALL'} 
+          timeframe={reportToPrint?.timeframe || 'DAY'} 
+        />
+      )}
 
       {/* Main Content Area (Menu) */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
@@ -194,24 +233,33 @@ const App: React.FC = () => {
                 </div>
              </div>
              
-             {/* Admin Button - Only visible to ADMIN */}
-             {currentUser === 'ADMIN' && (
-               <button 
-                 onClick={() => setIsAdminOpen(true)}
+             <div className="flex items-center gap-2">
+               <button
+                 onClick={toggleFullscreen}
                  className="p-3 bg-gray-100 rounded-full hover:bg-gray-200 text-gray-600 transition-colors"
-                 title="Administración"
+                 title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
                >
-                 <Settings size={20} />
+                 {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
                </button>
-             )}
-
-             <button 
-               onClick={() => setCurrentUser(null)}
-               className="p-3 bg-red-50 text-red-500 rounded-full hover:bg-red-100 transition-colors"
-               title="Cerrar Sesión / Bloquear"
-             >
-               <LogOut size={20} />
-             </button>
+               {/* Admin Button - Only visible to ADMIN */}
+               {currentUser === 'ADMIN' && (
+                 <button 
+                   onClick={() => setIsAdminOpen(true)}
+                   className="p-3 bg-gray-100 rounded-full hover:bg-gray-200 text-gray-600 transition-colors"
+                   title="Administración"
+                 >
+                   <Settings size={20} />
+                 </button>
+               )}
+  
+               <button 
+                 onClick={() => setCurrentUser(null)}
+                 className="p-3 bg-red-50 text-red-500 rounded-full hover:bg-red-100 transition-colors"
+                 title="Cerrar Sesión / Bloquear"
+               >
+                 <LogOut size={20} />
+               </button>
+             </div>
           </div>
         </header>
 
@@ -367,7 +415,10 @@ const App: React.FC = () => {
       />
       
       {isAdminOpen && (
-        <AdminPanel onClose={() => setIsAdminOpen(false)} />
+        <AdminPanel 
+          onClose={() => setIsAdminOpen(false)} 
+          onPrintReport={handlePrintReport}
+        />
       )}
     </div>
   );
