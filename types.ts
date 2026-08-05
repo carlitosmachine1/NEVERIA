@@ -34,6 +34,9 @@ export interface Order {
 
 export interface StoreState {
   businessName: string;
+  address: string;
+  adminPin: string;
+  cajeroPin: string;
   receiptLogo: string | null; // Base64 string for the image
   categories: Category[];
   products: Product[];
@@ -45,6 +48,9 @@ export interface StoreState {
   updateCategory: (category: Category) => void;
   deleteCategory: (id: string) => void;
   updateBusinessName: (name: string) => void;
+  updateAddress: (address: string) => void;
+  updateAdminPin: (pin: string) => void;
+  updateCajeroPin: (pin: string) => void;
   updateReceiptLogo: (base64: string | null) => void;
   addOrder: (order: Order) => void;
 }

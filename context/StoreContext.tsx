@@ -6,7 +6,23 @@ const StoreContext = createContext<StoreState | undefined>(undefined);
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [businessName, setBusinessName] = useState(() => {
-    return localStorage.getItem('pos_business_name') || "ALONSO INC";
+    const saved = localStorage.getItem('pos_business_name');
+    if (!saved || saved === "La Colonial" || saved === "Alonso Gringo") {
+      return "ALONSO INC";
+    }
+    return saved;
+  });
+
+  const [address, setAddress] = useState(() => {
+    return localStorage.getItem('pos_address') || "Av. Principal #123, Centro";
+  });
+
+  const [adminPin, setAdminPin] = useState(() => {
+    return localStorage.getItem('pos_admin_pin') || "1234";
+  });
+
+  const [cajeroPin, setCajeroPin] = useState(() => {
+    return localStorage.getItem('pos_cajero_pin') || "0000";
   });
 
   const [receiptLogo, setReceiptLogo] = useState<string | null>(() => {
@@ -45,6 +61,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem('pos_business_name', businessName);
     document.title = `${businessName} - Punto de Venta`;
   }, [businessName]);
+
+  useEffect(() => {
+    localStorage.setItem('pos_address', address);
+  }, [address]);
+
+  useEffect(() => {
+    localStorage.setItem('pos_admin_pin', adminPin);
+  }, [adminPin]);
+
+  useEffect(() => {
+    localStorage.setItem('pos_cajero_pin', cajeroPin);
+  }, [cajeroPin]);
 
   useEffect(() => {
     if (receiptLogo) {
@@ -94,6 +122,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setBusinessName(name);
   };
 
+  const updateAddress = (newAddress: string) => {
+    setAddress(newAddress);
+  };
+
+  const updateAdminPin = (pin: string) => {
+    setAdminPin(pin);
+  };
+
+  const updateCajeroPin = (pin: string) => {
+    setCajeroPin(pin);
+  };
+
   const updateReceiptLogo = (base64: string | null) => {
     setReceiptLogo(base64);
   };
@@ -105,6 +145,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <StoreContext.Provider value={{
       businessName,
+      address,
+      adminPin,
+      cajeroPin,
       receiptLogo,
       categories,
       products,
@@ -116,6 +159,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       updateCategory,
       deleteCategory,
       updateBusinessName,
+      updateAddress,
+      updateAdminPin,
+      updateCajeroPin,
       updateReceiptLogo,
       addOrder
     }}>

@@ -1,26 +1,43 @@
 import React, { useState } from 'react';
-import { Lock, User, LogIn, Store, AlertCircle } from 'lucide-react';
+import { Lock, Store, AlertCircle, Delete } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
 interface LoginScreenProps {
-  onLogin: () => void;
+  onLogin: (role: 'ADMIN' | 'CAJERO') => void;
+  message?: string;
 }
 
-const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
-  const { businessName } = useStore();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, message }) => {
+  const { businessName, adminPin, cajeroPin } = useStore();
+  const [pin, setPin] = useState('');
   const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Hardcoded credentials as requested
-    if (username === 'ADMIN' && password === 'ADMIN') {
-      onLogin();
-    } else {
-      setError('Credenciales incorrectas. Intente nuevamente.');
-      setPassword('');
-    }
+  const handleNumClick = (n: string) => {
+    setError('');
+    setPin(prev => {
+      const newPin = prev + n;
+      if (newPin.length === 4) {
+        if (newPin === adminPin) {
+          onLogin('ADMIN');
+        } else if (newPin === cajeroPin) {
+          onLogin('CAJERO');
+        } else {
+          setError('PIN incorrecto');
+          setTimeout(() => setPin(''), 500); // Clear after a short delay
+        }
+      }
+      return newPin.slice(0, 4); // Keep max 4 chars
+    });
+  };
+
+  const handleClear = () => {
+    setPin('');
+    setError('');
+  };
+
+  const handleBackspace = () => {
+    setPin(prev => prev.slice(0, -1));
+    setError('');
   };
 
   return (
@@ -38,60 +55,47 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         </div>
 
         {/* Form Side */}
-        <div className="flex-1 p-8 md:p-12">
-          <div className="text-center mb-8">
+        <div className="flex-1 p-8">
+          <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-pink-100 text-pink-500 mb-4 shadow-sm">
               <Lock size={32} />
             </div>
             <h1 className="text-2xl font-display font-bold text-gray-800">{businessName}</h1>
-            <p className="text-sm text-gray-500">Punto de Venta</p>
+            <p className="text-sm text-gray-500">{message || 'Ingrese su PIN de acceso'}</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-4">
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-pink-500 transition-colors">
-                  <User size={20} />
-                </div>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => { setUsername(e.target.value); setError(''); }}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl leading-5 bg-gray-50 text-gray-900 placeholder-gray-500 focus:outline-none focus:bg-white focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
-                  placeholder="Usuario"
-                  autoFocus
-                />
-              </div>
+          <div className="flex justify-center gap-2 mb-6">
+            {[0, 1, 2, 3].map(i => (
+              <div 
+                key={i} 
+                className={`w-4 h-4 rounded-full transition-colors ${i < pin.length ? 'bg-pink-500' : 'bg-gray-200'}`} 
+              />
+            ))}
+          </div>
 
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-pink-500 transition-colors">
-                  <Lock size={20} />
-                </div>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl leading-5 bg-gray-50 text-gray-900 placeholder-gray-500 focus:outline-none focus:bg-white focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
-                  placeholder="Contraseña"
-                />
-              </div>
+          {error && (
+            <div className="flex items-center justify-center gap-2 text-red-500 text-sm bg-red-50 p-2 rounded-lg mb-4 animate-pulse">
+              <AlertCircle size={16} />
+              <span>{error}</span>
             </div>
+          )}
 
-            {error && (
-              <div className="flex items-center gap-2 text-red-500 text-sm bg-red-50 p-3 rounded-lg animate-pulse">
-                <AlertCircle size={16} />
-                <span>{error}</span>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent text-sm font-bold rounded-xl text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-all shadow-lg hover:shadow-xl active:scale-95"
-            >
-              <LogIn size={18} />
-              INICIAR SISTEMA
-            </button>
-          </form>
+          <div className="grid grid-cols-3 gap-3">
+             {[1,2,3,4,5,6,7,8,9].map(n => (
+               <button 
+                 key={n} 
+                 onClick={() => handleNumClick(n.toString())} 
+                 className="text-2xl font-bold py-4 bg-gray-50 text-gray-900 rounded-xl hover:bg-gray-100 active:bg-gray-200 border shadow-sm transition-all"
+               >
+                 {n}
+               </button>
+             ))}
+             <button onClick={handleClear} className="text-xl font-bold py-4 text-red-500 bg-red-50 rounded-xl hover:bg-red-100 border border-red-100">C</button>
+             <button onClick={() => handleNumClick('0')} className="text-2xl font-bold py-4 bg-gray-50 text-gray-900 rounded-xl hover:bg-gray-100 active:bg-gray-200 border shadow-sm">0</button>
+             <button onClick={handleBackspace} className="flex items-center justify-center py-4 bg-gray-50 text-gray-900 rounded-xl hover:bg-gray-100 active:bg-gray-200 border shadow-sm">
+               <Delete size={24} />
+             </button>
+          </div>
 
           <div className="mt-8 text-center">
             <p className="text-xs text-gray-500">Sistema Seguro v1.0 • GelatoPOS</p>

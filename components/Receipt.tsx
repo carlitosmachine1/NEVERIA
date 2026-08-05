@@ -7,7 +7,7 @@ interface ReceiptProps {
 }
 
 const Receipt: React.FC<ReceiptProps> = ({ order }) => {
-  const { businessName, receiptLogo } = useStore();
+  const { businessName, receiptLogo, address } = useStore();
   
   if (!order) return null;
 
@@ -22,7 +22,7 @@ const Receipt: React.FC<ReceiptProps> = ({ order }) => {
           />
         ) : null}
         <h1 className="text-xl font-bold uppercase mb-1">{businessName}</h1>
-        <p>Av. Principal #123, Centro</p>
+        <p>{address}</p>
         <p>Tel: 555-0000</p>
         <p className="mt-2">{order.date.toLocaleDateString()} {order.date.toLocaleTimeString()}</p>
         <p>Ticket: #{order.id.slice(0, 8)}</p>

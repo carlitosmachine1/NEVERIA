@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { X, Save, Plus, Trash2, Edit2, Store, Package, Layers, BarChart3, Upload, Image as ImageIcon, LucideIceCream, LucidePopsicle, LucideCoffee, LucideCakeSlice, LucideCherry, LucideStar } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { X, Save, Check, Plus, Trash2, Edit2, Store, Package, Layers, BarChart3, Upload, Image as ImageIcon, LucideIceCream, LucidePopsicle, LucideCoffee, LucideCakeSlice, LucideCherry, LucideStar } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { Product, Category } from '../types';
 
@@ -48,8 +48,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
     categories, 
     orders,
     businessName, 
+    address,
+    adminPin,
+    cajeroPin,
     receiptLogo,
     updateBusinessName, 
+    updateAddress,
+    updateAdminPin,
+    updateCajeroPin,
     updateReceiptLogo,
     addProduct, 
     updateProduct, 
@@ -60,8 +66,36 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
   } = useStore();
 
   const [activeTab, setActiveTab] = useState<'PRODUCTS' | 'CATEGORIES' | 'SETTINGS' | 'REPORTS'>('PRODUCTS');
+  const [reportTimeframe, setReportTimeframe] = useState<'DAY' | 'WEEK' | 'MONTH'>('DAY');
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
+  
+  const [nameInput, setNameInput] = useState(businessName);
+  const [addressInput, setAddressInput] = useState(address);
+  const [adminPinInput, setAdminPinInput] = useState(adminPin);
+  const [cajeroPinInput, setCajeroPinInput] = useState(cajeroPin);
+  const [showSaveBadge, setShowSaveBadge] = useState(false);
+
+  useEffect(() => {
+    setNameInput(businessName);
+    setAddressInput(address);
+    setAdminPinInput(adminPin);
+    setCajeroPinInput(cajeroPin);
+  }, [businessName, address, adminPin, cajeroPin]);
+
+  const handleSaveSettings = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!nameInput.trim()) return;
+    updateBusinessName(nameInput.trim());
+    updateAddress(addressInput.trim());
+    updateAdminPin(adminPinInput.trim() || '1234');
+    updateCajeroPin(cajeroPinInput.trim() || '0000');
+    
+    setShowSaveBadge(true);
+    setTimeout(() => {
+      setShowSaveBadge(false);
+    }, 3000);
+  };
 
   // --- PRODUCT HANDLERS ---
   const handleSaveProduct = () => {
@@ -126,14 +160,32 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
     });
     const sortedProducts = Object.values(productSales).sort((a, b) => b.total - a.total);
 
-    // Sales by Date
+    // Sales by Date, Week, Month
     const dailySales: Record<string, number> = {};
+    const weeklySales: Record<string, number> = {};
+    const monthlySales: Record<string, number> = {};
+
     orders.forEach(order => {
-      const dateKey = order.date.toLocaleDateString();
+      const d = order.date;
+      
+      // Daily
+      const dateKey = d.toLocaleDateString();
       dailySales[dateKey] = (dailySales[dateKey] || 0) + order.total;
+
+      // Weekly (Year-Week)
+      const year = d.getFullYear();
+      const firstDayOfYear = new Date(year, 0, 1);
+      const pastDaysOfYear = (d.getTime() - firstDayOfYear.getTime()) / 86400000;
+      const weekNumber = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+      const weekKey = `Semana ${weekNumber}, ${year}`;
+      weeklySales[weekKey] = (weeklySales[weekKey] || 0) + order.total;
+
+      // Monthly
+      const monthKey = d.toLocaleDateString([], { month: 'long', year: 'numeric' });
+      monthlySales[monthKey] = (monthlySales[monthKey] || 0) + order.total;
     });
 
-    return { totalSales, totalOrders, sortedProducts, dailySales };
+    return { totalSales, totalOrders, sortedProducts, dailySales, weeklySales, monthlySales };
   }, [orders]);
 
   return (
@@ -335,23 +387,39 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                        </div>
                     </div>
 
-                    {/* Sales by Date */}
+                    {/* Sales by Period */}
                     <div className="bg-white p-6 rounded-xl border shadow-sm">
-                       <h3 className="font-bold text-lg mb-4 text-gray-800">Ventas Recientes (Por Día)</h3>
+                       <div className="flex justify-between items-center mb-4">
+                         <h3 className="font-bold text-lg text-gray-800">Historial de Ventas</h3>
+                         <div className="flex bg-gray-100 p-1 rounded-lg">
+                           <button onClick={() => setReportTimeframe('DAY')} className={`px-3 py-1 text-xs font-bold rounded-md ${reportTimeframe === 'DAY' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:bg-gray-200'}`}>Día</button>
+                           <button onClick={() => setReportTimeframe('WEEK')} className={`px-3 py-1 text-xs font-bold rounded-md ${reportTimeframe === 'WEEK' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:bg-gray-200'}`}>Semana</button>
+                           <button onClick={() => setReportTimeframe('MONTH')} className={`px-3 py-1 text-xs font-bold rounded-md ${reportTimeframe === 'MONTH' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:bg-gray-200'}`}>Mes</button>
+                         </div>
+                       </div>
                        <div className="space-y-2">
-                          {(Object.entries(reports.dailySales) as [string, number][]).slice(-7).map(([date, total]) => (
-                            <div key={date} className="flex items-center gap-2">
-                               <div className="w-24 text-sm font-mono text-gray-500">{date}</div>
-                               <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
-                                  <div 
-                                    className="h-full bg-green-500" 
-                                    style={{ width: `${Math.min(100, (total / (Math.max(...(Object.values(reports.dailySales) as number[])) || 1)) * 100)}%` }}
-                                  ></div>
-                               </div>
-                               <div className="w-20 text-right font-bold text-sm">${(total as number).toFixed(0)}</div>
-                            </div>
-                          ))}
-                          {Object.keys(reports.dailySales).length === 0 && <p className="text-gray-500 italic">No hay datos aún.</p>}
+                          {(() => {
+                            const dataToUse = reportTimeframe === 'DAY' ? reports.dailySales : reportTimeframe === 'WEEK' ? reports.weeklySales : reports.monthlySales;
+                            const entries = (Object.entries(dataToUse) as [string, number][]).slice(-7);
+                            const maxVal = Math.max(...(Object.values(dataToUse) as number[])) || 1;
+                            
+                            if (entries.length === 0) {
+                              return <p className="text-gray-500 italic">No hay datos aún.</p>;
+                            }
+
+                            return entries.map(([date, total]) => (
+                              <div key={date} className="flex items-center gap-2">
+                                 <div className="w-28 text-xs font-mono text-gray-500 truncate" title={date}>{date}</div>
+                                 <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
+                                    <div 
+                                      className="h-full bg-green-500" 
+                                      style={{ width: `${Math.min(100, (total / maxVal) * 100)}%` }}
+                                    ></div>
+                                 </div>
+                                 <div className="w-20 text-right font-bold text-sm">${(total as number).toFixed(0)}</div>
+                              </div>
+                            ));
+                          })()}
                        </div>
                     </div>
                  </div>
@@ -395,21 +463,83 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                   </div>
                 </div>
 
-                {/* Business Name */}
+                {/* Business Settings */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border">
                   <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <Store className="text-pink-500" /> Datos del Negocio
+                    <Store className="text-pink-500" /> Configuración General
                   </h3>
-                  <div className="space-y-3">
-                    <label className="block text-sm font-medium text-gray-700">Nombre del Establecimiento</label>
-                    <input 
-                      type="text" 
-                      value={businessName}
-                      onChange={(e) => updateBusinessName(e.target.value)}
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-pink-500 outline-none text-lg font-bold"
-                    />
-                    <p className="text-sm text-gray-500">Este nombre aparecerá en el encabezado y en los tickets.</p>
-                  </div>
+                  <form onSubmit={handleSaveSettings} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Establecimiento</label>
+                        <input 
+                          type="text" 
+                          value={nameInput}
+                          onChange={(e) => setNameInput(e.target.value)}
+                          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-pink-500 outline-none font-bold bg-gray-50 focus:bg-white transition-all"
+                          placeholder="Nombre del negocio"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Dirección del Ticket</label>
+                        <input 
+                          type="text" 
+                          value={addressInput}
+                          onChange={(e) => setAddressInput(e.target.value)}
+                          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-pink-500 outline-none font-bold bg-gray-50 focus:bg-white transition-all"
+                          placeholder="Ej. Av. Principal #123"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">PIN de Administrador (4 dígitos)</label>
+                        <input 
+                          type="password" 
+                          maxLength={4}
+                          value={adminPinInput}
+                          onChange={(e) => setAdminPinInput(e.target.value.replace(/[^0-9]/g, ''))}
+                          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-pink-500 outline-none font-bold bg-gray-50 focus:bg-white transition-all tracking-[0.5em]"
+                          placeholder="1234"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">PIN de Cajero (4 dígitos)</label>
+                        <input 
+                          type="password" 
+                          maxLength={4}
+                          value={cajeroPinInput}
+                          onChange={(e) => setCajeroPinInput(e.target.value.replace(/[^0-9]/g, ''))}
+                          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-pink-500 outline-none font-bold bg-gray-50 focus:bg-white transition-all tracking-[0.5em]"
+                          placeholder="0000"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end pt-2">
+                      <button
+                        type="submit"
+                        className="bg-pink-600 hover:bg-pink-700 active:scale-95 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 transition-all shadow-sm"
+                      >
+                        <Save size={18} />
+                        <span>Guardar Configuración</span>
+                      </button>
+                    </div>
+
+                    {showSaveBadge && (
+                      <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm font-bold flex items-center gap-2 transition-all mt-4">
+                        <Check size={18} className="text-green-600" />
+                        <span>¡Configuración actualizada correctamente!</span>
+                      </div>
+                    )}
+
+                    {/* Live Preview Card */}
+                    <div className="mt-4 p-4 bg-gray-50 border border-dashed rounded-xl">
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Vista Previa en Ticket</span>
+                      <div className="bg-white p-3 border rounded shadow-xs text-center font-mono">
+                        <div className="font-bold text-base uppercase text-gray-900">{nameInput || businessName}</div>
+                        <div className="text-[11px] text-gray-500">{addressInput || address}</div>
+                      </div>
+                    </div>
+                  </form>
                 </div>
               </div>
             )}

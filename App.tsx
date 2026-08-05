@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { ShoppingCart, Trash2, Plus, Minus, Printer, Settings, LucideIceCream, LucidePopsicle, LucideCoffee, LucideCakeSlice, LucideCherry, LucideStar } from 'lucide-react';
+import { ShoppingCart, Trash2, Plus, Minus, Printer, Settings, LucideIceCream, LucidePopsicle, LucideCoffee, LucideCakeSlice, LucideCherry, LucideStar, LogOut } from 'lucide-react';
 import { TAX_RATE } from './constants';
 import { Product, CartItem, Order } from './types';
 import PaymentModal from './components/PaymentModal';
@@ -24,8 +24,9 @@ const getCategoryIcon = (iconType: string) => {
 const App: React.FC = () => {
   const { products, categories, businessName, addOrder } = useStore();
   
-  // Auth State
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Auth & Roles State
+  const [currentUser, setCurrentUser] = useState<'ADMIN' | 'CAJERO' | null>(null);
+  const [showSwitchPrompt, setShowSwitchPrompt] = useState(false);
 
   const [currentCategory, setCurrentCategory] = useState<string>(categories[0]?.id || '');
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -34,11 +35,33 @@ const App: React.FC = () => {
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Inactivity Lock Logic
+  useEffect(() => {
+    if (!currentUser) return; // Don't track if already locked/logged out
+
+    let timeout: NodeJS.Timeout;
+    const resetTimer = () => {
+      clearTimeout(timeout);
+      // Lock after 2 minutes of inactivity
+      timeout = setTimeout(() => {
+        setCurrentUser(null);
+        setIsAdminOpen(false); // Close admin panel if open
+      }, 120000);
+    };
+
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    events.forEach(e => document.addEventListener(e, resetTimer));
+    resetTimer();
+
+    return () => {
+      clearTimeout(timeout);
+      events.forEach(e => document.removeEventListener(e, resetTimer));
+    };
+  }, [currentUser]);
+
   // Trigger print automatically when lastOrder updates
   useEffect(() => {
     if (lastOrder) {
-      // Timeout ensures the Receipt component has re-rendered with the new data
-      // and the modal has fully closed before the print dialog steals focus.
       const timer = setTimeout(() => {
         window.print();
       }, 500);
@@ -91,7 +114,6 @@ const App: React.FC = () => {
     setIsProcessing(true);
     
     // Generate AI message for receipt
-    // This is awaited, so the spinner will show until this finishes
     const aiMessage = await generateReceiptMessage(cart);
 
     const order: Order = {
@@ -107,17 +129,10 @@ const App: React.FC = () => {
       aiMessage
     };
 
-    // 1. Save to history
     addOrder(order); 
-    
-    // 2. Clear cart and close modal
     setCart([]);
     setIsPaymentModalOpen(false);
-    
-    // 3. Set lastOrder to trigger the print useEffect
     setLastOrder(order);
-    
-    // 4. Stop processing state
     setIsProcessing(false);
   };
 
@@ -126,12 +141,32 @@ const App: React.FC = () => {
   };
 
   // --- SECURITY LAYER ---
-  if (!isAuthenticated) {
-    return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
+  if (!currentUser) {
+    return <LoginScreen onLogin={(role) => setCurrentUser(role)} />;
+  }
+
+  if (showSwitchPrompt) {
+    return (
+      <div className="fixed inset-0 z-[100]">
+        <LoginScreen 
+          onLogin={(role) => {
+            setCurrentUser(role);
+            setShowSwitchPrompt(false);
+          }} 
+          message="Cambiar de usuario" 
+        />
+        <button 
+          onClick={() => setShowSwitchPrompt(false)}
+          className="absolute top-4 right-4 bg-white p-4 rounded-full shadow-lg text-gray-500 font-bold"
+        >
+          Cancelar
+        </button>
+      </div>
+    );
   }
 
   return (
-    <div className="flex h-screen w-full bg-gray-100 overflow-hidden font-sans">
+    <div className="flex h-screen w-full bg-gray-100 overflow-hidden font-sans relative">
       
       {/* Hidden Receipt Component - rendered at root level for printing */}
       <Receipt order={lastOrder} />
@@ -141,9 +176,18 @@ const App: React.FC = () => {
         
         {/* Top Header */}
         <header className="bg-white p-4 shadow-sm flex justify-between items-center z-10 shrink-0">
-          <div>
+          <div 
+            onClick={() => {
+              if (currentUser === 'CAJERO') {
+                setShowSwitchPrompt(true);
+              }
+            }}
+            className={currentUser === 'CAJERO' ? 'cursor-pointer select-none' : ''}
+          >
             <h1 className="text-2xl font-display font-bold text-pink-600">{businessName} 🍦</h1>
-            <p className="text-sm text-gray-500 font-medium">Turno de Mañana • Cajero 1</p>
+            <p className="text-sm text-gray-500 font-medium">
+              Turno de Mañana • {currentUser === 'ADMIN' ? 'Administrador' : 'Cajero 1'}
+            </p>
           </div>
           <div className="flex items-center gap-6">
              <div className="text-right">
@@ -154,12 +198,24 @@ const App: React.FC = () => {
                   {new Date().toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' })}
                 </div>
              </div>
+             
+             {/* Admin Button - Only visible to ADMIN */}
+             {currentUser === 'ADMIN' && (
+               <button 
+                 onClick={() => setIsAdminOpen(true)}
+                 className="p-3 bg-gray-100 rounded-full hover:bg-gray-200 text-gray-600 transition-colors"
+                 title="Administración"
+               >
+                 <Settings size={20} />
+               </button>
+             )}
+
              <button 
-               onClick={() => setIsAdminOpen(true)}
-               className="p-3 bg-gray-100 rounded-full hover:bg-gray-200 text-gray-600 transition-colors"
-               title="Administración"
+               onClick={() => setCurrentUser(null)}
+               className="p-3 bg-red-50 text-red-500 rounded-full hover:bg-red-100 transition-colors"
+               title="Cerrar Sesión / Bloquear"
              >
-               <Settings size={20} />
+               <LogOut size={20} />
              </button>
           </div>
         </header>
