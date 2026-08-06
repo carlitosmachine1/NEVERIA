@@ -197,69 +197,69 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, onPrintReport }) => {
   }, [orders, reportPaymentFilter]);
 
   return (
-    <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-5xl h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+      <div className="bg-white w-full max-w-5xl h-[95vh] sm:h-[90vh] rounded-xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
         
         {/* Header */}
-        <div className="bg-gray-800 text-white p-4 flex justify-between items-center shrink-0">
+        <div className="bg-gray-800 text-white p-3 sm:p-4 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-display font-bold">Administración</h2>
-            <span className="bg-gray-700 px-2 py-1 rounded text-xs text-gray-300">Backend</span>
+            <h2 className="text-lg sm:text-xl font-display font-bold">Administración</h2>
+            <span className="bg-gray-700 px-2 py-0.5 rounded text-xs text-gray-300">Backend</span>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-full transition-colors">
-            <X size={24} />
+          <button onClick={onClose} className="p-1.5 sm:p-2 hover:bg-gray-700 rounded-full transition-colors">
+            <X size={20} />
           </button>
         </div>
 
         {/* Tabs & Content Container */}
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
           
-          {/* Sidebar */}
-          <div className="w-48 bg-gray-50 border-r flex flex-col p-2 gap-1 shrink-0">
+          {/* Sidebar / Top Horizontal Tabs on Mobile */}
+          <div className="w-full md:w-48 bg-gray-50 border-b md:border-b-0 md:border-r flex flex-row md:flex-col p-1.5 sm:p-2 gap-1 shrink-0 overflow-x-auto no-scrollbar">
              <button 
               onClick={() => setActiveTab('PRODUCTS')}
-              className={`p-3 rounded-lg flex items-center gap-2 font-medium text-left ${activeTab === 'PRODUCTS' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-200'}`}
+              className={`p-2.5 sm:p-3 rounded-lg flex items-center gap-2 font-medium text-xs sm:text-sm md:text-base whitespace-nowrap ${activeTab === 'PRODUCTS' ? 'bg-blue-100 text-blue-700 font-bold' : 'text-gray-600 hover:bg-gray-200'}`}
             >
-              <Package size={20} /> Productos
+              <Package className="w-4 h-4 sm:w-5 sm:h-5" /> Productos
             </button>
             <button 
               onClick={() => setActiveTab('CATEGORIES')}
-              className={`p-3 rounded-lg flex items-center gap-2 font-medium text-left ${activeTab === 'CATEGORIES' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-200'}`}
+              className={`p-2.5 sm:p-3 rounded-lg flex items-center gap-2 font-medium text-xs sm:text-sm md:text-base whitespace-nowrap ${activeTab === 'CATEGORIES' ? 'bg-blue-100 text-blue-700 font-bold' : 'text-gray-600 hover:bg-gray-200'}`}
             >
-              <Layers size={20} /> Categorías
+              <Layers className="w-4 h-4 sm:w-5 sm:h-5" /> Categorías
             </button>
             <button 
               onClick={() => setActiveTab('REPORTS')}
-              className={`p-3 rounded-lg flex items-center gap-2 font-medium text-left ${activeTab === 'REPORTS' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-200'}`}
+              className={`p-2.5 sm:p-3 rounded-lg flex items-center gap-2 font-medium text-xs sm:text-sm md:text-base whitespace-nowrap ${activeTab === 'REPORTS' ? 'bg-blue-100 text-blue-700 font-bold' : 'text-gray-600 hover:bg-gray-200'}`}
             >
-              <BarChart3 size={20} /> Reportes
+              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" /> Reportes
             </button>
             <button 
               onClick={() => setActiveTab('SETTINGS')}
-              className={`p-3 rounded-lg flex items-center gap-2 font-medium text-left ${activeTab === 'SETTINGS' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-200'}`}
+              className={`p-2.5 sm:p-3 rounded-lg flex items-center gap-2 font-medium text-xs sm:text-sm md:text-base whitespace-nowrap ${activeTab === 'SETTINGS' ? 'bg-blue-100 text-blue-700 font-bold' : 'text-gray-600 hover:bg-gray-200'}`}
             >
-              <Store size={20} /> Tienda
+              <Store className="w-4 h-4 sm:w-5 sm:h-5" /> Tienda
             </button>
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 overflow-y-auto p-6 bg-gray-100">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-gray-100">
             
             {/* PRODUCTS TAB */}
             {activeTab === 'PRODUCTS' && (
               <div className="space-y-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-2xl font-bold text-gray-800">Catálogo de Productos</h3>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2 sm:mb-4">
+                  <h3 className="text-xl sm:text-2xl font-bold text-gray-800">Catálogo de Productos</h3>
                   <button 
                     onClick={() => setEditingProduct({ name: '', price: 0, category: categories[0]?.id, color: 'bg-white' })}
-                    className="bg-green-500 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-green-600 shadow-sm"
+                    className="bg-green-500 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-bold text-sm sm:text-base flex items-center gap-2 hover:bg-green-600 shadow-xs"
                   >
-                    <Plus size={20} /> Nuevo Producto
+                    <Plus size={18} /> Nuevo Producto
                   </button>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                  <table className="w-full text-left">
+                <div className="bg-white rounded-xl shadow-xs border overflow-x-auto">
+                  <table className="w-full text-left min-w-[500px]">
                     <thead className="bg-gray-50 text-gray-500 text-sm">
                       <tr>
                         <th className="p-4">Producto</th>
